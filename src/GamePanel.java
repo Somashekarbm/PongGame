@@ -4,11 +4,11 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Random;
 
-public class GamePanel extends JPanel implements Runnable{
-
+public class GamePanel extends JPanel implements Runnable {
+    AI ai;
     static final int GAME_WIDTH = 1000;
-    static final int GAME_HEIGHT = (int)(GAME_WIDTH * (0.5555));
-    static final Dimension SCREEN_SIZE = new Dimension(GAME_WIDTH,GAME_HEIGHT);
+    static final int GAME_HEIGHT = (int) (GAME_WIDTH * (0.5555));
+    static final Dimension SCREEN_SIZE = new Dimension(GAME_WIDTH, GAME_HEIGHT);
     static final int BALL_DIAMETER = 20;
     static final int PADDLE_WIDTH = 25;
     static final int PADDLE_HEIGHT = 100;
@@ -21,10 +21,11 @@ public class GamePanel extends JPanel implements Runnable{
     Ball ball;
     Score score;
 
-    GamePanel(){
+    GamePanel() {
+        ai = new AI(GAME_WIDTH - PADDLE_WIDTH, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 2);
         newPaddles();
         newBall();
-        score = new Score(GAME_WIDTH,GAME_HEIGHT);
+        score = new Score(GAME_WIDTH, GAME_HEIGHT);
         this.setFocusable(true);
         this.addKeyListener(new AL());
         this.setPreferredSize(SCREEN_SIZE);
@@ -35,110 +36,110 @@ public class GamePanel extends JPanel implements Runnable{
 
     public void newBall() {
         random = new Random();
-        ball = new Ball((GAME_WIDTH/2)-(BALL_DIAMETER/2),random.nextInt(GAME_HEIGHT-BALL_DIAMETER),BALL_DIAMETER,BALL_DIAMETER);
+        ball = new Ball((GAME_WIDTH / 2) - (BALL_DIAMETER / 2), random.nextInt(GAME_HEIGHT - BALL_DIAMETER),
+                BALL_DIAMETER, BALL_DIAMETER);
     }
+
     public void newPaddles() {
-        paddle1 = new Paddle(0,(GAME_HEIGHT/2)-(PADDLE_HEIGHT/2),PADDLE_WIDTH,PADDLE_HEIGHT,1);
-        paddle2 = new Paddle(GAME_WIDTH-PADDLE_WIDTH,(GAME_HEIGHT/2)-(PADDLE_HEIGHT/2),PADDLE_WIDTH,PADDLE_HEIGHT,2);
+        paddle1 = new Paddle(0, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 1);
+        paddle2 = ai; // Assigning AI-controlled paddle
     }
+
     public void paint(Graphics g) {
-        image = createImage(getWidth(),getHeight());
+        image = createImage(getWidth(), getHeight());
         graphics = image.getGraphics();
         draw(graphics);
-        g.drawImage(image,0,0,this);
+        g.drawImage(image, 0, 0, this);
     }
+
     public void draw(Graphics g) {
         paddle1.draw(g);
         paddle2.draw(g);
         ball.draw(g);
         score.draw(g);
-        Toolkit.getDefaultToolkit().sync(); // I forgot to add this line of code in the video, it helps with the animation
-
+        Toolkit.getDefaultToolkit().sync();
     }
+
     public void move() {
         paddle1.move();
-        paddle2.move();
+        ai.makeMove(ball); // Pass the y-coordinate of the ball to AI's makeMove method
         ball.move();
     }
-    public void checkCollision() {
 
-        //bounce ball off top & bottom window edges
-        if(ball.y <=0) {
+    public void checkCollision() {
+        if (ball.y <= 0 || ball.y >= GAME_HEIGHT - BALL_DIAMETER) {
             ball.setYDirection(-ball.yVelocity);
         }
-        if(ball.y >= GAME_HEIGHT-BALL_DIAMETER) {
-            ball.setYDirection(-ball.yVelocity);
-        }
-        //bounce ball off paddles
-        if(ball.intersects(paddle1)) {
-            ball.xVelocity = Math.abs(ball.xVelocity);
-            ball.xVelocity++; //optional for more difficulty
-            if(ball.yVelocity>0)
-                ball.yVelocity++; //optional for more difficulty
-            else
-                ball.yVelocity--;
-            ball.setXDirection(ball.xVelocity);
-            ball.setYDirection(ball.yVelocity);
-        }
-        if(ball.intersects(paddle2)) {
-            ball.xVelocity = Math.abs(ball.xVelocity);
-            ball.xVelocity++; //optional for more difficulty
-            if(ball.yVelocity>0)
-                ball.yVelocity++; //optional for more difficulty
-            else
-                ball.yVelocity--;
+
+        if (ball.intersects(paddle1) || ball.intersects(ai)) {
             ball.setXDirection(-ball.xVelocity);
-            ball.setYDirection(ball.yVelocity);
+
+            // Increase velocity slightly when intersecting with a paddle
+            final float VELOCITY_INCREMENT = 0.6f; // Adjust this value as needed
+
+            if (ball.xVelocity > 0) {
+                ball.xVelocity += VELOCITY_INCREMENT; // Increase velocity if ball is moving right
+            } else {
+                ball.xVelocity--; // Decrease velocity if ball is moving left
+            }
+
+            // Adjust y-velocity (optional)
+            if (ball.yVelocity > 0) {
+                ball.yVelocity += VELOCITY_INCREMENT; // Increase y-velocity if ball is moving downward
+            } else {
+                ball.yVelocity--; // Decrease y-velocity if ball is moving upward
+            }
         }
-        //stops paddles at window edges
-        if(paddle1.y<=0)
-            paddle1.y=0;
-        if(paddle1.y >= (GAME_HEIGHT-PADDLE_HEIGHT))
-            paddle1.y = GAME_HEIGHT-PADDLE_HEIGHT;
-        if(paddle2.y<=0)
-            paddle2.y=0;
-        if(paddle2.y >= (GAME_HEIGHT-PADDLE_HEIGHT))
-            paddle2.y = GAME_HEIGHT-PADDLE_HEIGHT;
-        //give a player 1 point and creates new paddles & ball
-        if(ball.x <=0) {
+
+        if (paddle1.y <= 0)
+            paddle1.y = 0;
+        if (paddle1.y >= GAME_HEIGHT - PADDLE_HEIGHT)
+            paddle1.y = GAME_HEIGHT - PADDLE_HEIGHT;
+        if (ai.y <= 0)
+            ai.y = 0;
+        if (ai.y >= GAME_HEIGHT - PADDLE_HEIGHT)
+            ai.y = GAME_HEIGHT - PADDLE_HEIGHT;
+
+        if (ball.x <= 0) {
             score.player2++;
             newPaddles();
             newBall();
-            System.out.println("Player 2: "+score.player2);
+            System.out.println("Player 2: " + score.player2);
         }
-        if(ball.x >= GAME_WIDTH-BALL_DIAMETER) {
+        if (ball.x >= GAME_WIDTH - BALL_DIAMETER) {
             score.player1++;
             newPaddles();
             newBall();
-            System.out.println("Player 1: "+score.player1);
+            System.out.println("Player 1: " + score.player1);
         }
     }
+
     public void run() {
-        //game loop
         long lastTime = System.nanoTime();
-        double amountOfTicks =60.0;
+        double amountOfTicks = 60.0;
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
-        while(true) {
+        while (true) {
             long now = System.nanoTime();
-            delta += (now -lastTime)/ns;
+            delta += (now - lastTime) / ns;
             lastTime = now;
-            if(delta >=1) {
+            if (delta >= 1) {
                 move();
+                ai.makeMove(ball); // Call makeMove() for AI paddle
                 checkCollision();
                 repaint();
                 delta--;
             }
         }
     }
-    public class AL extends KeyAdapter{
+
+    public class AL extends KeyAdapter {
         public void keyPressed(KeyEvent e) {
             paddle1.keyPressed(e);
-            paddle2.keyPressed(e);
         }
+
         public void keyReleased(KeyEvent e) {
             paddle1.keyReleased(e);
-            paddle2.keyReleased(e);
         }
     }
 }
