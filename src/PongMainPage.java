@@ -17,7 +17,8 @@ public class PongMainPage extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Open the game frame
-                new GameFrame();
+                openLoginSignupPage();
+                // new GameFrame();
                 // Close the main page frame
                 dispose();
             }
@@ -49,6 +50,11 @@ public class PongMainPage extends JFrame {
         add(panel);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void openLoginSignupPage() {
+        // Open the LoginSignupPage
+        LoginSignupPage loginSignupPage = new LoginSignupPage();
     }
 
     public static void main(String[] args) {

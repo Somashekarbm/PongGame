@@ -1,8 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
+import java.sql.Connection;
 import java.util.Random;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class GamePanel extends JPanel implements Runnable {
     AI ai;
@@ -20,8 +22,18 @@ public class GamePanel extends JPanel implements Runnable {
     Paddle paddle2;
     Ball ball;
     Score score;
+    JButton pauseResumeButton;
+    JButton exitButton;
+    boolean gamePaused = false;
+    private boolean playerWins = false;
+    DatabaseManager databaseManager;
+    String username; // Add username field
+    Connection connection; // Add connection field
 
-    GamePanel() {
+    GamePanel(String username, Connection connection) {
+        this.username = username;
+        this.connection = connection;
+        databaseManager = new DatabaseManager();
         ai = new AI(GAME_WIDTH - PADDLE_WIDTH, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 2);
         newPaddles();
         newBall();
@@ -30,8 +42,81 @@ public class GamePanel extends JPanel implements Runnable {
         this.addKeyListener(new AL());
         this.setPreferredSize(SCREEN_SIZE);
 
+        // Create Swing components on the EDT
+        SwingUtilities.invokeLater(() -> {
+            createButtons();
+        });
+
         gameThread = new Thread(this);
         gameThread.start();
+    }
+
+    private void createButtons() {
+        // Initialize buttons
+        pauseResumeButton = new JButton("Pause");
+        pauseResumeButton = new JButton("Pause");
+        pauseResumeButton.setBackground(Color.CYAN); // Set contrasting background
+        pauseResumeButton.setForeground(Color.BLACK); // Set contrasting text color
+        pauseResumeButton.setBorder(BorderFactory.createLineBorder(Color.WHITE)); // Add border
+
+        exitButton = new JButton("Exit");
+        exitButton.setBackground(Color.MAGENTA); // Set contrasting background
+        exitButton.setForeground(Color.BLACK); // Set contrasting text color
+        exitButton.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+        pauseResumeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (!gamePaused) {
+                    pauseGame();
+                    pauseResumeButton.setText("Resume");
+                } else {
+                    resumeGame();
+                    pauseResumeButton.setText("Pause");
+                }
+            }
+        });
+
+        exitButton = new JButton("Exit");
+        exitButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                stopGame();
+                JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(GamePanel.this);
+                frame.dispose();
+                // Add code here to navigate back to the main page of your game
+            }
+        });
+
+        // Create control panel to hold the buttons
+        JPanel controlPanel = new JPanel();
+        controlPanel.add(pauseResumeButton);
+        controlPanel.add(exitButton);
+
+        // Set layout manager to BorderLayout
+        setLayout(new BorderLayout());
+        // Add control panel to the bottom of the frame
+        add(controlPanel, BorderLayout.SOUTH);
+    }
+
+    private void updateWins() {
+        try {
+            String query = "UPDATE users SET wins = wins + 1 WHERE username = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Update database with losses
+    private void updateLosses() {
+        try {
+            String query = "UPDATE users SET losses = losses + 1 WHERE username = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void newBall() {
@@ -105,12 +190,26 @@ public class GamePanel extends JPanel implements Runnable {
             newPaddles();
             newBall();
             System.out.println("Player 2: " + score.player2);
+            checkGameResult(); // Check game result after player 2 scores
         }
         if (ball.x >= GAME_WIDTH - BALL_DIAMETER) {
             score.player1++;
             newPaddles();
             newBall();
             System.out.println("Player 1: " + score.player1);
+            checkGameResult(); // Check game result after player 1 scores
+        }
+    }
+
+    public void checkGameResult() {
+        // Check if the game is over (e.g., player wins or loses)
+        // Update wins/losses accordingly
+        if (score.player1 >= 1) {
+            playerWins = true;
+            updateWins();
+        } else if (score.player2 >= 1) {
+            playerWins = false;
+            updateLosses();
         }
     }
 
@@ -120,15 +219,24 @@ public class GamePanel extends JPanel implements Runnable {
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
         while (true) {
-            long now = System.nanoTime();
-            delta += (now - lastTime) / ns;
-            lastTime = now;
-            if (delta >= 1) {
-                move();
-                ai.makeMove(ball); // Call makeMove() for AI paddle
-                checkCollision();
-                repaint();
-                delta--;
+            if (!gamePaused) { // Only update game logic when not paused
+                long now = System.nanoTime();
+                delta += (now - lastTime) / ns;
+                lastTime = now;
+                while (delta >= 1) {
+                    move();
+                    ai.makeMove(ball);
+                    checkCollision();
+                    repaint();
+                    delta--;
+                }
+            } else {
+                // If paused, allow repainting for visual updates
+                try {
+                    Thread.sleep(10); // Adjust sleep time as needed
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -141,5 +249,21 @@ public class GamePanel extends JPanel implements Runnable {
         public void keyReleased(KeyEvent e) {
             paddle1.keyReleased(e);
         }
+    }
+
+    // Method to pause the game
+    public void pauseGame() {
+        gamePaused = true;
+    }
+
+    // Method to resume the game
+    public void resumeGame() {
+        gamePaused = false;
+    }
+
+    // Method to stop the game
+    public void stopGame() {
+        // Add any cleanup code here if necessary
+        gamePaused = true;
     }
 }
