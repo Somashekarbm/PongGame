@@ -1,6 +1,4 @@
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DatabaseManager {
     private Connection connection;
@@ -27,10 +25,10 @@ public class DatabaseManager {
 
     public void updateWins(String playerName) {
         try {
-            String query = "UPDATE leaderboard SET wins = wins + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, playerName);
-            preparedStatement.executeUpdate();
+            String query = "UPDATE leaderboard SET wins = wins + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = '"
+                    + playerName + "')";
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -38,10 +36,10 @@ public class DatabaseManager {
 
     public void updateLosses(String playerName) {
         try {
-            String query = "UPDATE leaderboard SET losses = losses + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, playerName);
-            preparedStatement.executeUpdate();
+            String query = "UPDATE leaderboard SET losses = losses + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = '"
+                    + playerName + "')";
+            Statement statement = connection.createStatement();
+            statement.executeUpdate(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -51,17 +49,26 @@ public class DatabaseManager {
         try {
             Statement statement = connection.createStatement();
             String query = "CREATE VIEW rankings AS " +
-                    "SELECT (@row_number:=@row_number + 1) AS ranking, " +
+                    "SELECT " +
+                    "(SELECT COUNT(*) + 1 FROM leaderboard l2 WHERE l2.wins > l.wins OR (l2.wins = l.wins AND l2.losses < l.losses)) AS ranking, "
+                    +
                     "u.username, " +
                     "l.wins, " +
                     "l.losses " +
-                    "FROM leaderboard l " +
-                    "JOIN users u ON l.user_id = u.user_id " +
-                    "ORDER BY l.wins DESC, l.losses ASC";
+                    "FROM " +
+                    "leaderboard l " +
+                    "JOIN " +
+                    "users u ON l.user_id = u.user_id " +
+                    "ORDER BY " +
+                    "l.wins DESC, " +
+                    "l.losses ASC;";
             statement.executeUpdate(query);
             System.out.println("Rankings view created successfully.");
+
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            // Empty finally block
         }
     }
 

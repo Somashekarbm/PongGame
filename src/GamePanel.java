@@ -26,14 +26,14 @@ public class GamePanel extends JPanel implements Runnable {
     JButton exitButton;
     boolean gamePaused = false;
     private boolean playerWins = false;
-    DatabaseManager databaseManager;
+    private DatabaseManager databaseManager;
     String username; // Add username field
     Connection connection; // Add connection field
 
     GamePanel(String username, Connection connection) {
         this.username = username;
         this.connection = connection;
-        databaseManager = new DatabaseManager();
+        databaseManager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
         ai = new AI(GAME_WIDTH - PADDLE_WIDTH, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 2);
         newPaddles();
         newBall();
@@ -78,10 +78,10 @@ public class GamePanel extends JPanel implements Runnable {
         exitButton = new JButton("Exit");
         exitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                stopGame();
                 JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(GamePanel.this);
                 frame.dispose();
-                // Add code here to navigate back to the main page of your game
+                // Open the main page
+                SwingUtilities.invokeLater(() -> new PongMainPage());
             }
         });
 
@@ -96,28 +96,28 @@ public class GamePanel extends JPanel implements Runnable {
         add(controlPanel, BorderLayout.SOUTH);
     }
 
-    private void updateWins() {
-        try {
-            String query = "UPDATE users SET wins = wins + 1 WHERE username = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, username);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    // private void updateWins() {
+    // try {
+    // String query = "UPDATE users SET wins = wins + 1 WHERE username = ?";
+    // PreparedStatement statement = connection.prepareStatement(query);
+    // statement.setString(1, username);
+    // statement.executeUpdate();
+    // } catch (SQLException e) {
+    // e.printStackTrace();
+    // }
+    // }
 
-    // Update database with losses
-    private void updateLosses() {
-        try {
-            String query = "UPDATE users SET losses = losses + 1 WHERE username = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setString(1, username);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    // // Update database with losses
+    // private void updateLosses() {
+    // try {
+    // String query = "UPDATE users SET losses = losses + 1 WHERE username = ?";
+    // PreparedStatement statement = connection.prepareStatement(query);
+    // statement.setString(1, username);
+    // statement.executeUpdate();
+    // } catch (SQLException e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     public void newBall() {
         random = new Random();
@@ -206,10 +206,11 @@ public class GamePanel extends JPanel implements Runnable {
         // Update wins/losses accordingly
         if (score.player1 >= 1) {
             playerWins = true;
-            updateWins();
+            databaseManager.updateWins(username);
         } else if (score.player2 >= 1) {
+            // ai agent so
             playerWins = false;
-            updateLosses();
+            databaseManager.updateLosses(username);
         }
     }
 

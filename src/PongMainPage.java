@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 
 public class PongMainPage extends JFrame {
     private DatabaseManager rankingsManager;
+    private LeaderboardPage leaderboardPage;
 
     public PongMainPage() {
         setTitle("Pong Game");
@@ -28,7 +29,17 @@ public class PongMainPage extends JFrame {
         leaderboardButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                openLeaderboardPage();
+                if (leaderboardPage == null) {
+                    leaderboardPage = new LeaderboardPage();
+                    leaderboardPage.addWindowListener(new java.awt.event.WindowAdapter() {
+                        @Override
+                        public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                            // Destroy the rankings view when leaderboard window is closed
+                            rankingsManager.destroyRankingsView();
+                            leaderboardPage = null;
+                        }
+                    });
+                }
                 // Create the rankings view when leaderboard button is clicked
                 rankingsManager.createRankingsView();
                 dispose();
@@ -41,7 +52,6 @@ public class PongMainPage extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Destroy the rankings view before exiting
-                rankingsManager.destroyRankingsView();
                 System.exit(0);
             }
         });
@@ -66,10 +76,6 @@ public class PongMainPage extends JFrame {
 
     private void openLoginSignupPage() {
         new LoginSignupPage();
-    }
-
-    private void openLeaderboardPage() {
-        new LeaderboardPage();
     }
 
     public static void main(String[] args) {

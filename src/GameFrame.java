@@ -2,7 +2,7 @@
 // GameFrame.java
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Connection;
+import java.sql.Connection; // Add this line for importing Connection class
 
 public class GameFrame extends JFrame {
    GamePanel panel;

@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.sql.Connection; // Add this line for importing Connection class
 import java.sql.*;
 
 public class LoginSignupPage extends JFrame {
@@ -40,22 +41,6 @@ public class LoginSignupPage extends JFrame {
         connectToDatabase();
     }
 
-    // private void viewUserDetails() {
-    // // Commenting out this method as it's not used
-    // }
-
-    private void connectToDatabase() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
-            System.out.println("Connected to the database successfully.");
-        } catch (ClassNotFoundException | SQLException e) {
-            JOptionPane.showMessageDialog(this, "Failed to connect to the database.", "Error",
-                    JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
-    }
-
     private void login() {
         String username = usernameField.getText();
         String password = new String(passwordField.getPassword());
@@ -76,14 +61,17 @@ public class LoginSignupPage extends JFrame {
             if (resultSet.next()) {
                 // Login successful
                 dispose(); // Close the login/signup window
-                // Proceed to the game
+                // Proceed to the game (GameFrame)
                 String retrievedUsername = resultSet.getString("username");
+                // Instantiate GameFrame with retrievedUsername and connection
                 GameFrame gameFrame = new GameFrame(retrievedUsername, connection);
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password. Please try again.", "Login Failed",
                         JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error during login. Please try again.", "Login Failed",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
@@ -111,14 +99,30 @@ public class LoginSignupPage extends JFrame {
                 return;
             }
 
-            // Insert new user into the database
-            String insertQuery = "INSERT INTO users (username, password, wins, losses) VALUES (?, ?, 0, 0)";
-            PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
+            // Insert new user into the users table
+            String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
+            PreparedStatement insertStatement = connection.prepareStatement(insertQuery,
+                    Statement.RETURN_GENERATED_KEYS);
             insertStatement.setString(1, username);
             insertStatement.setString(2, password);
             int rowsAffected = insertStatement.executeUpdate();
 
             if (rowsAffected > 0) {
+                // Get the auto-generated user ID
+                ResultSet generatedKeys = insertStatement.getGeneratedKeys();
+                int userId = -1;
+                if (generatedKeys.next()) {
+                    userId = generatedKeys.getInt(1);
+                }
+
+                // Insert default values for wins and losses into the leaderboard table
+                if (userId != -1) {
+                    String leaderboardInsertQuery = "INSERT INTO leaderboard (user_id, wins, losses) VALUES (?, 0, 0)";
+                    PreparedStatement leaderboardInsertStatement = connection.prepareStatement(leaderboardInsertQuery);
+                    leaderboardInsertStatement.setInt(1, userId);
+                    leaderboardInsertStatement.executeUpdate();
+                }
+
                 JOptionPane.showMessageDialog(this, "Signup successful. You can now log in.", "Signup Success",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -126,11 +130,32 @@ public class LoginSignupPage extends JFrame {
                         JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error during signup. Please try again.", "Signup Failed",
+                    JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(LoginSignupPage::new);
+    private void connectToDatabase() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+            System.out.println("Connected to the database successfully.");
+        } catch (ClassNotFoundException | SQLException e) {
+            JOptionPane.showMessageDialog(this, "Failed to connect to the database.", "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    public void closeConnection() {
+        if (connection != null) {
+            try {
+                connection.close();
+                System.out.println("Database connection closed.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
