@@ -1,3 +1,21 @@
+view rankings-
+CREATE VIEW rankings AS
+SELECT 
+    (SELECT COUNT(*) + 1 FROM leaderboard l2 WHERE l2.wins > l.wins OR (l2.wins = l.wins AND l2.losses < l.losses)) AS ranking,
+    u.username,
+    l.wins,
+    l.losses
+FROM 
+    leaderboard l
+JOIN 
+    users u ON l.user_id = u.user_id
+ORDER BY 
+    l.wins DESC, 
+    l.losses ASC;
+DROP VIEW IF EXISTS rankings;
+
+.......
+
 can u add the functionality of a pause/resume button and also a exit button that takes the user back to the main page of the game and stops the current game as well,here are the classes of my game-
 GameFrame.java-
 import javax.swing.*;

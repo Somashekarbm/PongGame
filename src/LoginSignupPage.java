@@ -47,7 +47,7 @@ public class LoginSignupPage extends JFrame {
     private void connectToDatabase() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ponggamedb", "somu", "somu2002");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
             System.out.println("Connected to the database successfully.");
         } catch (ClassNotFoundException | SQLException e) {
             JOptionPane.showMessageDialog(this, "Failed to connect to the database.", "Error",
