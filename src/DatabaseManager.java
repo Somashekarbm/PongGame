@@ -25,10 +25,10 @@ public class DatabaseManager {
 
     public void updateWins(String playerName) {
         try {
-            String query = "UPDATE leaderboard SET wins = wins + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = '"
-                    + playerName + "')";
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(query);
+            String query = "UPDATE leaderboard SET wins = wins + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, playerName);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -36,10 +36,10 @@ public class DatabaseManager {
 
     public void updateLosses(String playerName) {
         try {
-            String query = "UPDATE leaderboard SET losses = losses + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = '"
-                    + playerName + "')";
-            Statement statement = connection.createStatement();
-            statement.executeUpdate(query);
+            String query = "UPDATE leaderboard SET losses = losses + 1 WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, playerName);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -59,12 +59,13 @@ public class DatabaseManager {
                     "leaderboard l " +
                     "JOIN " +
                     "users u ON l.user_id = u.user_id " +
+                    "WHERE " +
+                    "(l.wins > 0 OR l.losses > 0) " + // Filter out users with 0 wins and 0 losses
                     "ORDER BY " +
                     "l.wins DESC, " +
-                    "l.losses ASC;";
+                    "l.losses ASC";
             statement.executeUpdate(query);
             System.out.println("Rankings view created successfully.");
-
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -82,5 +83,9 @@ public class DatabaseManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public Connection getConnection() {
+        return connection;
     }
 }

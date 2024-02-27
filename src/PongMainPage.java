@@ -7,7 +7,9 @@ public class PongMainPage extends JFrame {
     private DatabaseManager rankingsManager;
     private LeaderboardPage leaderboardPage;
 
-    public PongMainPage() {
+    public PongMainPage(DatabaseManager rankingsManager) {
+        this.rankingsManager = rankingsManager;
+
         setTitle("Pong Game");
         setSize(400, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -30,18 +32,15 @@ public class PongMainPage extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (leaderboardPage == null) {
-                    leaderboardPage = new LeaderboardPage();
+                    leaderboardPage = new LeaderboardPage(rankingsManager);
                     leaderboardPage.addWindowListener(new java.awt.event.WindowAdapter() {
                         @Override
                         public void windowClosed(java.awt.event.WindowEvent windowEvent) {
-                            // Destroy the rankings view when leaderboard window is closed
-                            rankingsManager.destroyRankingsView();
+                            // Set leaderboardPage to null when the window is closed
                             leaderboardPage = null;
                         }
                     });
                 }
-                // Create the rankings view when leaderboard button is clicked
-                rankingsManager.createRankingsView();
                 dispose();
             }
         });
@@ -52,6 +51,7 @@ public class PongMainPage extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Destroy the rankings view before exiting
+                rankingsManager.destroyRankingsView();
                 System.exit(0);
             }
         });
@@ -60,18 +60,6 @@ public class PongMainPage extends JFrame {
         add(panel);
         setLocationRelativeTo(null);
         setVisible(true);
-
-        // Initialize the rankings manager
-        initialize();
-    }
-
-    private void initialize() {
-        try {
-            // Initialize the rankings manager with the database connection
-            rankingsManager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void openLoginSignupPage() {
@@ -79,6 +67,7 @@ public class PongMainPage extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(PongMainPage::new);
+        DatabaseManager manager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+        SwingUtilities.invokeLater(() -> new PongMainPage(manager));
     }
 }

@@ -1,10 +1,15 @@
 import javax.swing.*;
 import java.awt.*;
+import java.sql.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class LeaderboardPage extends JFrame {
-    public LeaderboardPage() {
+    private DatabaseManager databaseManager;
+
+    public LeaderboardPage(DatabaseManager manager) {
+        this.databaseManager = manager;
+
         setTitle("Leaderboard");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -14,19 +19,13 @@ public class LeaderboardPage extends JFrame {
 
         JTextArea leaderboardTextArea = new JTextArea();
         leaderboardTextArea.setEditable(false);
-        // Here you can fetch leaderboard data from the database and display it in the
-        // text area
-        leaderboardTextArea.setText(
-                "Leaderboard:\n1. Player1 - Wins: 10, Losses: 5\n2. Player2 - Wins: 8, Losses: 7\n3. Player3 - Wins: 6, Losses: 9");
         panel.add(leaderboardTextArea, BorderLayout.CENTER);
 
         JButton backButton = new JButton("Back to Main Page");
         backButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Open the main page
-                new PongMainPage();
-                // Close the leaderboard page frame
+                new PongMainPage(databaseManager); // Pass the databaseManager to the main page
                 dispose();
             }
         });
@@ -35,9 +34,39 @@ public class LeaderboardPage extends JFrame {
         add(panel);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        // Display leaderboard details
+        displayLeaderboard(leaderboardTextArea);
     }
 
-    public static void main(String[] args) {
-        new LeaderboardPage();
+    private void displayLeaderboard(JTextArea leaderboardTextArea) {
+        try {
+            // Create the rankings view
+            databaseManager.createRankingsView();
+
+            // Fetch data from the leaderboard table
+            Connection connection = databaseManager.getConnection();
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM rankings");
+
+            StringBuilder leaderboardText = new StringBuilder("Leaderboard:\n");
+            int rank = 1;
+            while (resultSet.next()) {
+                String username = resultSet.getString("username");
+                int wins = resultSet.getInt("wins");
+                int losses = resultSet.getInt("losses");
+                leaderboardText.append(rank).append(". ").append(username).append(" - Wins: ").append(wins)
+                        .append(", Losses: ").append(losses).append("\n");
+                rank++;
+            }
+            leaderboardTextArea.setText(leaderboardText.toString());
+
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error fetching leaderboard data.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

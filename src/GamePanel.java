@@ -3,8 +3,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
 import java.util.Random;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+// import java.sql.PreparedStatement;
+// import java.sql.SQLException;
 
 public class GamePanel extends JPanel implements Runnable {
     AI ai;
@@ -81,7 +81,7 @@ public class GamePanel extends JPanel implements Runnable {
                 JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(GamePanel.this);
                 frame.dispose();
                 // Open the main page
-                SwingUtilities.invokeLater(() -> new PongMainPage());
+                SwingUtilities.invokeLater(() -> new PongMainPage(databaseManager));
             }
         });
 
@@ -95,29 +95,6 @@ public class GamePanel extends JPanel implements Runnable {
         // Add control panel to the bottom of the frame
         add(controlPanel, BorderLayout.SOUTH);
     }
-
-    // private void updateWins() {
-    // try {
-    // String query = "UPDATE users SET wins = wins + 1 WHERE username = ?";
-    // PreparedStatement statement = connection.prepareStatement(query);
-    // statement.setString(1, username);
-    // statement.executeUpdate();
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // }
-    // }
-
-    // // Update database with losses
-    // private void updateLosses() {
-    // try {
-    // String query = "UPDATE users SET losses = losses + 1 WHERE username = ?";
-    // PreparedStatement statement = connection.prepareStatement(query);
-    // statement.setString(1, username);
-    // statement.executeUpdate();
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // }
-    // }
 
     public void newBall() {
         random = new Random();
