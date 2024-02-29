@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 
 public class LeaderboardPage extends JFrame {
     private DatabaseManager databaseManager;
+    private JTextArea leaderboardTextArea;
 
     public LeaderboardPage(DatabaseManager manager) {
         this.databaseManager = manager;
@@ -17,9 +18,9 @@ public class LeaderboardPage extends JFrame {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
-        JTextArea leaderboardTextArea = new JTextArea();
+        leaderboardTextArea = new JTextArea();
         leaderboardTextArea.setEditable(false);
-        panel.add(leaderboardTextArea, BorderLayout.CENTER);
+        panel.add(new JScrollPane(leaderboardTextArea), BorderLayout.CENTER);
 
         JButton backButton = new JButton("Back to Main Page");
         backButton.addActionListener(new ActionListener() {
@@ -36,10 +37,10 @@ public class LeaderboardPage extends JFrame {
         setVisible(true);
 
         // Display leaderboard details
-        displayLeaderboard(leaderboardTextArea);
+        displayLeaderboard();
     }
 
-    private void displayLeaderboard(JTextArea leaderboardTextArea) {
+    private void displayLeaderboard() {
         try {
             // Create the rankings view
             databaseManager.createRankingsView();
@@ -63,7 +64,7 @@ public class LeaderboardPage extends JFrame {
 
             resultSet.close();
             statement.close();
-            connection.close();
+            // Note: Do not close the connection here to avoid premature closure
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error fetching leaderboard data.", "Error", JOptionPane.ERROR_MESSAGE);

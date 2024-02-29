@@ -15,17 +15,27 @@ public class PongMainPage extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 1));
+        panel.setLayout(new GridLayout(4, 1));
 
-        JButton playButton = new JButton("Play Game");
-        playButton.addActionListener(new ActionListener() {
+        JButton adminButton = new JButton("Admin Login/Signup");
+        adminButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                openLoginSignupPage();
+                openAdminLoginSignupPage();
                 dispose();
             }
         });
-        panel.add(playButton);
+        panel.add(adminButton);
+
+        JButton playerButton = new JButton("Player Login/Signup");
+        playerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openPlayerLoginSignupPage();
+                dispose();
+            }
+        });
+        panel.add(playerButton);
 
         JButton leaderboardButton = new JButton("Leaderboard");
         leaderboardButton.addActionListener(new ActionListener() {
@@ -62,7 +72,11 @@ public class PongMainPage extends JFrame {
         setVisible(true);
     }
 
-    private void openLoginSignupPage() {
+    private void openAdminLoginSignupPage() {
+        new AdminLoginSignupPage(rankingsManager);
+    }
+
+    private void openPlayerLoginSignupPage() {
         new LoginSignupPage();
     }
 

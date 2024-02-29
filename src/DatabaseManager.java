@@ -47,6 +47,17 @@ public class DatabaseManager {
 
     public void createRankingsView() {
         try {
+            // Check if the rankings view already exists
+            DatabaseMetaData metaData = connection.getMetaData();
+            ResultSet resultSet = metaData.getTables(null, null, "rankings", null);
+            if (resultSet.next()) {
+                // The rankings view already exists, you can choose to drop it before creating
+                // it again
+                destroyRankingsView();
+            }
+            resultSet.close();
+
+            // Create the rankings view
             Statement statement = connection.createStatement();
             String query = "CREATE VIEW rankings AS " +
                     "SELECT " +
@@ -68,8 +79,6 @@ public class DatabaseManager {
             System.out.println("Rankings view created successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // Empty finally block
         }
     }
 

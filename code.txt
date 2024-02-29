@@ -15,7 +15,7 @@ ORDER BY
 DROP VIEW IF EXISTS rankings;
 
 .......
-
+main password and username for mysql server-  "jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@"
 can u add the functionality of a pause/resume button and also a exit button that takes the user back to the main page of the game and stops the current game as well,here are the classes of my game-
 GameFrame.java-
 import javax.swing.*;

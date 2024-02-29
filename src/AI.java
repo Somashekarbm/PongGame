@@ -1,8 +1,9 @@
 import java.util.Random;
 
 class AI extends Paddle {
-    private int speed = 5;
+    private int speed = 1; // Reduce the speed
     private Random random;
+    private static final double MISS_PROBABILITY = 0.9; // Increase the probability of missing the ball
 
     public AI(int x, int y, int width, int height, int id) {
         super(x, y, width, height, id);
@@ -17,12 +18,22 @@ class AI extends Paddle {
         // Predict the future y position of the ball based on its current trajectory
         int futureBallY = (int) (ball.y + timeToReachX * ball.yVelocity);
 
-        // Adjust the predicted y position to ensure it stays within the game bounds
-        if (futureBallY < 0) {
-            futureBallY = -futureBallY;
-        } else if (futureBallY > GamePanel.GAME_HEIGHT - GamePanel.BALL_DIAMETER) {
-            futureBallY = 2 * (GamePanel.GAME_HEIGHT - GamePanel.BALL_DIAMETER) - futureBallY;
+        // Introduce randomness to make the paddle occasionally miss the ball
+        if (random.nextDouble() < MISS_PROBABILITY) {
+            // Determine the range within which the future position can vary
+            int minAdjustment = -speed * 2; // Adjust this value to control how much the paddle can miss
+            int maxAdjustment = speed * 2; // Adjust this value to control how much the paddle can miss
+
+            // Randomly adjust the future position within the specified range
+            futureBallY += random.nextInt(maxAdjustment - minAdjustment + 1) + minAdjustment;
         }
+
+        // Adjust the predicted y position to ensure it stays within the game bounds
+        futureBallY = Math.max(futureBallY, 0); // Ensure futureBallY is not less than 0
+        futureBallY = Math.min(futureBallY, GamePanel.GAME_HEIGHT - GamePanel.BALL_DIAMETER); // Ensure futureBallY is
+                                                                                              // not greater than the
+                                                                                              // height of the game
+                                                                                              // panel
 
         // Move the paddle towards the predicted position
         if (y + height / 2 < futureBallY) {
