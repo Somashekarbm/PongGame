@@ -5,11 +5,7 @@ import java.awt.event.ActionListener;
 
 public class AdminLoginSignupPage extends JFrame {
     private DatabaseManager rankingsManager;
-    private JTextField usernameField;
-    private JPasswordField passwordField;
-    // private String jdbcURL = "jdbc:mysql://localhost:3306/ponggamedb";
-    private String username;
-    private String password;
+    private GamePanel gamePanel;
 
     public AdminLoginSignupPage(DatabaseManager rankingsManager) {
         this.rankingsManager = rankingsManager;
@@ -22,12 +18,12 @@ public class AdminLoginSignupPage extends JFrame {
         panel.setLayout(new GridLayout(3, 2));
 
         JLabel usernameLabel = new JLabel("Username:");
-        usernameField = new JTextField();
+        JTextField usernameField = new JTextField();
         panel.add(usernameLabel);
         panel.add(usernameField);
 
         JLabel passwordLabel = new JLabel("Password:");
-        passwordField = new JPasswordField();
+        JPasswordField passwordField = new JPasswordField();
         panel.add(passwordLabel);
         panel.add(passwordField);
 
@@ -35,10 +31,10 @@ public class AdminLoginSignupPage extends JFrame {
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                username = usernameField.getText();
-                password = new String(passwordField.getPassword());
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword());
                 if (validateLogin(username, password)) {
-                    openAdminModule();
+                    openAdminFeaturesWindow();
                     dispose();
                 } else {
                     JOptionPane.showMessageDialog(AdminLoginSignupPage.this, "Invalid username or password.");
@@ -76,7 +72,89 @@ public class AdminLoginSignupPage extends JFrame {
         JOptionPane.showMessageDialog(AdminLoginSignupPage.this, "Admin signup feature not implemented.");
     }
 
-    private void openAdminModule() {
-        Admin.main(new String[] { "jdbc:mysql://localhost:3306/ponggamedb", username, password });
+    private void openAdminFeaturesWindow() {
+        JFrame adminFeaturesWindow = new JFrame("Admin Features");
+        adminFeaturesWindow.setSize(400, 300);
+        adminFeaturesWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(5, 1));
+
+        JButton addPlayerButton = new JButton("Add Player");
+        addPlayerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = JOptionPane.showInputDialog("Enter username:");
+                String password = JOptionPane.showInputDialog("Enter password:");
+                if (username != null && password != null) {
+                    Admin admin = new Admin("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+                    admin.addPlayer(username, password);
+                }
+            }
+        });
+        panel.add(addPlayerButton);
+
+        JButton deletePlayerButton = new JButton("Delete Player");
+        deletePlayerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = JOptionPane.showInputDialog("Enter username to delete:");
+                if (username != null) {
+                    Admin admin = new Admin("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+                    admin.deletePlayer(username);
+                }
+            }
+        });
+        panel.add(deletePlayerButton);
+
+        JButton viewPlayerButton = new JButton("View Player");
+        viewPlayerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = JOptionPane.showInputDialog("Enter username to view:");
+                if (username != null) {
+                    Admin admin = new Admin("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+                    admin.viewPlayer(username);
+                }
+            }
+        });
+        panel.add(viewPlayerButton);
+
+        JButton editPlayerButton = new JButton("Edit Player");
+        editPlayerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = JOptionPane.showInputDialog("Enter username to edit:");
+                String newPassword = JOptionPane.showInputDialog("Enter new password:");
+                if (username != null && newPassword != null) {
+                    Admin admin = new Admin("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+                    admin.editPlayer(username, newPassword);
+                }
+            }
+        });
+        panel.add(editPlayerButton);
+
+        JButton exitButton = new JButton("Exit");
+        exitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Stop the game loop
+                if (gamePanel != null) {
+                    gamePanel.stopGame();
+                }
+                dispose(); // Dispose of the current window
+                new PongMainPage(rankingsManager); // Open the PongMainPage
+            }
+        });
+        panel.add(exitButton);
+
+        adminFeaturesWindow.add(panel);
+        adminFeaturesWindow.setLocationRelativeTo(null);
+        adminFeaturesWindow.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        DatabaseManager manager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+        SwingUtilities.invokeLater(() -> new AdminLoginSignupPage(manager));
     }
 }

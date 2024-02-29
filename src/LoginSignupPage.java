@@ -1,7 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Connection; // Add this line for importing Connection class
+// Add this line for importing Connection class
 import java.sql.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class LoginSignupPage extends JFrame {
     private JTextField usernameField;
@@ -65,6 +67,15 @@ public class LoginSignupPage extends JFrame {
                 String retrievedUsername = resultSet.getString("username");
                 // Instantiate GameFrame with retrievedUsername and connection
                 GameFrame gameFrame = new GameFrame(retrievedUsername, connection);
+                gameFrame.setVisible(true); // Show the game frame
+                // gameFrame.requestFocus(); // Request focus for key events
+                gameFrame.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        // GameFrame is closed, so close the connection to the database
+                        closeConnection();
+                    }
+                });
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password. Please try again.", "Login Failed",
                         JOptionPane.ERROR_MESSAGE);

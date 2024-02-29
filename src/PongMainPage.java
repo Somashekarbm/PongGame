@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 public class PongMainPage extends JFrame {
     private DatabaseManager rankingsManager;
     private LeaderboardPage leaderboardPage;
+    private GamePanel gamePanel; // Add a reference to the GamePanel
 
     public PongMainPage(DatabaseManager rankingsManager) {
         this.rankingsManager = rankingsManager;
@@ -60,6 +61,10 @@ public class PongMainPage extends JFrame {
         exitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // Stop the game if it's running
+                if (gamePanel != null) {
+                    gamePanel.stopGame();
+                }
                 // Destroy the rankings view before exiting
                 rankingsManager.destroyRankingsView();
                 System.exit(0);
@@ -80,8 +85,17 @@ public class PongMainPage extends JFrame {
         new LoginSignupPage();
     }
 
+    public void setGamePanel(GamePanel gamePanel) {
+        this.gamePanel = gamePanel;
+    }
+
     public static void main(String[] args) {
         DatabaseManager manager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
-        SwingUtilities.invokeLater(() -> new PongMainPage(manager));
+        PongMainPage mainPage = new PongMainPage(manager);
+        GamePanel gamePanel = new GamePanel("Player", manager.getConnection()); // Create GamePanel instance
+        mainPage.setGamePanel(gamePanel); // Set the GamePanel instance in the PongMainPage
+        SwingUtilities.invokeLater(() -> mainPage.setVisible(true));
+
     }
+
 }
