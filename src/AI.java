@@ -1,7 +1,7 @@
 import java.util.Random;
 
 class AI extends Paddle {
-    private int speed = 1; // Reduce the speed
+    private int speed = 2; // Reduce the speed
     private Random random;
     private static final double MISS_PROBABILITY = 0.9; // Increase the probability of missing the ball
 

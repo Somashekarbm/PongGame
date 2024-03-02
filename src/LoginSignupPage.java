@@ -1,9 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
-// Add this line for importing Connection class
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 public class LoginSignupPage extends JFrame {
     private JTextField usernameField;
@@ -11,36 +10,72 @@ public class LoginSignupPage extends JFrame {
     private JButton loginButton;
     private JButton signupButton;
     private Connection connection;
+    private boolean isAuthenticated = false;
+    private String username;
+    private DatabaseManager databaseManager;
+    private PongMainPage parent;
+    private String jdbcURL = "jdbc:mysql://localhost:3306/ponggamedb";
 
-    public LoginSignupPage() {
+    public LoginSignupPage(DatabaseManager databaseManager, PongMainPage parent) {
+        this.databaseManager = databaseManager;
+        if (!(parent instanceof PongMainPage)) {
+            throw new IllegalArgumentException("Parent window must be an instance of PongMainPage");
+        }
+        this.parent = parent;
         setTitle("Login / Signup");
-        setSize(400, 150);
+        setSize(400, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(3, 2));
+
+        // Use GridBagLayout
+        // Use GridBagLayout
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10); // Padding between components
 
         JLabel usernameLabel = new JLabel("Username:");
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        add(usernameLabel, gbc);
+
         usernameField = new JTextField();
+        usernameField.setPreferredSize(new Dimension(200, 25)); // Set preferred size
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        add(usernameField, gbc);
+
         JLabel passwordLabel = new JLabel("Password:");
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        add(passwordLabel, gbc);
+
         passwordField = new JPasswordField();
+        passwordField.setPreferredSize(new Dimension(200, 25)); // Set preferred size
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        add(passwordField, gbc);
+
         loginButton = new JButton("Login");
-        signupButton = new JButton("Signup");
-
         loginButton.addActionListener(e -> login());
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2; // Span across two columns
+        add(loginButton, gbc);
+
+        signupButton = new JButton("Signup");
         signupButton.addActionListener(e -> signup());
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2; // Span across two columns
+        add(signupButton, gbc);
 
-        add(usernameLabel);
-        add(usernameField);
-        add(passwordLabel);
-        add(passwordField);
-        add(loginButton);
-        add(signupButton);
-
-        Insets buttonInsets = new Insets(5, 10, 5, 10);
-        loginButton.setMargin(buttonInsets);
-        signupButton.setMargin(buttonInsets);
         setVisible(true);
 
-        connectToDatabase();
+        // Initialize the connection
+        connectToDatabase(); // Ensure connection is initialized
+    }
+
+    public Connection getConnection() {
+        return connection;
     }
 
     private void login() {
@@ -61,21 +96,10 @@ public class LoginSignupPage extends JFrame {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                // Login successful
+                isAuthenticated = true;
+                this.username = username;
+                openGameWindow(); // Open the game window after successful login
                 dispose(); // Close the login/signup window
-                // Proceed to the game (GameFrame)
-                String retrievedUsername = resultSet.getString("username");
-                // Instantiate GameFrame with retrievedUsername and connection
-                GameFrame gameFrame = new GameFrame(retrievedUsername, connection);
-                gameFrame.setVisible(true); // Show the game frame
-                // gameFrame.requestFocus(); // Request focus for key events
-                gameFrame.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        // GameFrame is closed, so close the connection to the database
-                        closeConnection();
-                    }
-                });
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password. Please try again.", "Login Failed",
                         JOptionPane.ERROR_MESSAGE);
@@ -147,15 +171,21 @@ public class LoginSignupPage extends JFrame {
         }
     }
 
+    public String getUsername() {
+        return username;
+    }
+
     private void connectToDatabase() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
+            connection = DriverManager.getConnection(jdbcURL, "root", "Bandisomu2@");
             System.out.println("Connected to the database successfully.");
         } catch (ClassNotFoundException | SQLException e) {
             JOptionPane.showMessageDialog(this, "Failed to connect to the database.", "Error",
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+            // Handle the case where connection fails by setting it to null
+            connection = null;
         }
     }
 
@@ -168,5 +198,66 @@ public class LoginSignupPage extends JFrame {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean isAuthenticated() {
+        return isAuthenticated;
+    }
+
+    private void openGameWindow() {
+        // Create a new JFrame for the game window
+        JFrame gameWindow = new JFrame("Pong Game");
+        gameWindow.setSize(400, 200);
+        gameWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // Add buttons for play game and game history
+        JButton playGameButton = new JButton("Play Game");
+        JButton gameHistoryButton = new JButton("Game History");
+
+        // Add action listeners for the buttons
+        playGameButton.addActionListener(e -> playGame());
+        gameHistoryButton.addActionListener(e -> showGameHistory());
+
+        // Add buttons to the game window
+        gameWindow.setLayout(new GridLayout(2, 1));
+        gameWindow.add(playGameButton);
+        gameWindow.add(gameHistoryButton);
+
+        gameWindow.setVisible(true);
+    }
+
+    private void playGame() {
+        // Ensure that the player is authenticated before starting the game
+        if (isAuthenticated) {
+            // Create a new GameFrame instead of directly creating a GamePanel
+            new GameFrame(parent, username, connection);
+            // Close the current login/signup window
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please login first.", "Login Required", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showGameHistory() {
+        // Implement game history functionality
+        JOptionPane.showMessageDialog(this, "Game history functionality will be implemented here.");
+    }
+
+    public static void main(String[] args) {
+        String jdbcURL = "jdbc:mysql://localhost:3306/ponggamedb";
+        String username = "root";
+        String password = "Bandisomu2@";
+
+        SwingUtilities.invokeLater(() -> {
+            // Create an instance of DatabaseManager
+            DatabaseManager databaseManager = new DatabaseManager(jdbcURL, username, password);
+
+            // Create an instance of PongMainPage with DatabaseManager as a parameter
+            PongMainPage parent = new PongMainPage(databaseManager);
+
+            // Create an instance of LoginSignupPage with DatabaseManager and PongMainPage
+            // instances
+            new LoginSignupPage(databaseManager, parent);
+        });
     }
 }

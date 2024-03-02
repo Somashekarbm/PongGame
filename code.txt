@@ -1,3 +1,5 @@
+//solve the error of the score count of player 2 and also the game loop runs again in the Background and add the feature of the gamehistory and solve the issue of resume and exit button display and working,adminloginsign needs a back buton
+
 view rankings-
 CREATE VIEW rankings AS
 SELECT 

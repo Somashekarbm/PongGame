@@ -2,15 +2,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
 
 public class PongMainPage extends JFrame {
     private DatabaseManager rankingsManager;
     private LeaderboardPage leaderboardPage;
+    private PongMainPage mainpage;
     private GamePanel gamePanel; // Add a reference to the GamePanel
 
     public PongMainPage(DatabaseManager rankingsManager) {
         this.rankingsManager = rankingsManager;
-
+        this.mainpage = this;
         setTitle("Pong Game");
         setSize(400, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,6 +54,7 @@ public class PongMainPage extends JFrame {
                         }
                     });
                 }
+                // Dispose the current frame
                 dispose();
             }
         });
@@ -82,20 +85,49 @@ public class PongMainPage extends JFrame {
     }
 
     private void openPlayerLoginSignupPage() {
-        new LoginSignupPage();
+        LoginSignupPage loginSignupPage = new LoginSignupPage(rankingsManager, this);
+        loginSignupPage.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                if (loginSignupPage.isAuthenticated() && loginSignupPage.getUsername() != null) {
+                    // Pass the PongMainPage instance to the GamePanel constructor
+                    startGame(loginSignupPage.getUsername(), loginSignupPage.getConnection(), mainpage);
+                }
+            }
+        });
+        dispose();
     }
 
     public void setGamePanel(GamePanel gamePanel) {
         this.gamePanel = gamePanel;
+        getContentPane().removeAll(); // Remove all components from the content pane
+        getContentPane().add(gamePanel); // Add the GamePanel to the content pane
+        gamePanel.requestFocusInWindow();
+        gamePanel.initGame(); // Call a method to initialize the game (without starting it)
+        revalidate(); // Revalidate the frame to reflect the changes
+    }
+
+    public DatabaseManager getDatabaseManager() {
+        return rankingsManager;
+    }
+
+    public void startGame(String username, Connection connection, PongMainPage pongMainPage) {
+
+        try {
+            // Instantiate the GamePanel with the authenticated username and connection
+            GamePanel gamePanel = new GamePanel(rankingsManager, username, connection, this);
+            pongMainPage.setGamePanel(gamePanel); // Set the GamePanel in PongMainPage
+            // Close the current login/signup window
+            dispose();
+            // Now, let PongMainPage handle adding the GamePanel and starting the game
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
         DatabaseManager manager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
         PongMainPage mainPage = new PongMainPage(manager);
-        GamePanel gamePanel = new GamePanel("Player", manager.getConnection()); // Create GamePanel instance
-        mainPage.setGamePanel(gamePanel); // Set the GamePanel instance in the PongMainPage
         SwingUtilities.invokeLater(() -> mainPage.setVisible(true));
-
     }
-
 }

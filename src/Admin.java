@@ -26,11 +26,23 @@ public class Admin {
 
     public void deletePlayer(String username) {
         try {
-            String query = "DELETE FROM users WHERE username = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, username);
-            preparedStatement.executeUpdate();
-            System.out.println("Player deleted successfully.");
+            // Delete related records in the leaderboard table
+            String deleteLeaderboardQuery = "DELETE FROM leaderboard WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
+            PreparedStatement deleteLeaderboardStatement = connection.prepareStatement(deleteLeaderboardQuery);
+            deleteLeaderboardStatement.setString(1, username);
+            deleteLeaderboardStatement.executeUpdate();
+
+            // Delete the player from the users table
+            String deletePlayerQuery = "DELETE FROM users WHERE username = ?";
+            PreparedStatement deletePlayerStatement = connection.prepareStatement(deletePlayerQuery);
+            deletePlayerStatement.setString(1, username);
+            int rowsAffected = deletePlayerStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Player deleted successfully.");
+            } else {
+                System.out.println("Player not found.");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

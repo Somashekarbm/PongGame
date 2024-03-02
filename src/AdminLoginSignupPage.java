@@ -142,10 +142,15 @@ public class AdminLoginSignupPage extends JFrame {
                 if (gamePanel != null) {
                     gamePanel.stopGame();
                 }
-                dispose(); // Dispose of the current window
-                new PongMainPage(rankingsManager); // Open the PongMainPage
+
+                // Dispose of the current window
+                dispose();
+
+                // Open the PongMainPage
+                new PongMainPage(rankingsManager).setVisible(true);
             }
         });
+
         panel.add(exitButton);
 
         adminFeaturesWindow.add(panel);
