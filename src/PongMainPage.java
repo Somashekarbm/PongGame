@@ -84,6 +84,10 @@ public class PongMainPage extends JFrame {
         new AdminLoginSignupPage(rankingsManager);
     }
 
+    public GamePanel getGamePanel() {
+        return gamePanel;
+    }
+
     private void openPlayerLoginSignupPage() {
         LoginSignupPage loginSignupPage = new LoginSignupPage(rankingsManager, this);
         loginSignupPage.addWindowListener(new java.awt.event.WindowAdapter() {

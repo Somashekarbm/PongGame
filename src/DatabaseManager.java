@@ -45,6 +45,41 @@ public class DatabaseManager {
         }
     }
 
+    // for now i have set the status to null,later lets implement the status to
+    // store whether the user has won/lost during that particular game.
+    public void insertGameHistory(String username) throws SQLException {
+        String query = "INSERT INTO gamehistory (user_id, timestamp, status) VALUES (?, CURRENT_TIMESTAMP, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            int userId = getUserIdByUsername(username);
+            statement.setInt(1, userId);
+            statement.setString(2, "Pending"); // Set initial status to "Pending"
+            statement.executeUpdate();
+        }
+    }
+
+    public int getUserIdByUsername(String username) throws SQLException {
+        int userId = -1;
+        String query = "SELECT user_id FROM users WHERE username = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    userId = resultSet.getInt("user_id");
+                }
+            }
+        }
+        return userId;
+    }
+
+    public void updateGameHistory(String username, String status) throws SQLException {
+        String query = "UPDATE gamehistory SET status = ? WHERE user_id = (SELECT user_id FROM users WHERE username = ?)";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, status);
+            statement.setString(2, username);
+            statement.executeUpdate();
+        }
+    }
+
     public void createRankingsView() {
         try {
             // Check if the rankings view already exists

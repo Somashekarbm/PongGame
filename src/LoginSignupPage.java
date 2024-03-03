@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class LoginSignupPage extends JFrame {
     private JTextField usernameField;
@@ -171,6 +173,11 @@ public class LoginSignupPage extends JFrame {
         }
     }
 
+    public void closeWindow() {
+        closeConnection(); // Close the database connection when the window is closed
+        dispose(); // Close the window
+    }
+
     public String getUsername() {
         return username;
     }
@@ -204,11 +211,18 @@ public class LoginSignupPage extends JFrame {
         return isAuthenticated;
     }
 
-    private void openGameWindow() {
+    public void openGameWindow() {
         // Create a new JFrame for the game window
         JFrame gameWindow = new JFrame("Pong Game");
         gameWindow.setSize(400, 200);
         gameWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        gameWindow.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                // Call updateGameHistoryOnClose when the window is closed
+                updateGameHistoryOnClose();
+            }
+        });
 
         // Add buttons for play game and game history
         JButton playGameButton = new JButton("Play Game");
@@ -231,6 +245,16 @@ public class LoginSignupPage extends JFrame {
         if (isAuthenticated) {
             // Create a new GameFrame instead of directly creating a GamePanel
             new GameFrame(parent, username, connection);
+
+            // Call insertGameHistory to record the start of the game
+            try {
+                databaseManager.insertGameHistory(username);
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error recording game start.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+
             // Close the current login/signup window
             dispose();
         } else {
@@ -238,9 +262,77 @@ public class LoginSignupPage extends JFrame {
         }
     }
 
+    public void updateGameHistoryOnClose() {
+        if (isAuthenticated()) {
+            try {
+                GamePanel gamePanel = parent.getGamePanel();
+                if (gamePanel != null) {
+                    if (gamePanel.isGameOver()) {
+                        if (gamePanel.playerWins()) {
+                            databaseManager.updateGameHistory(username, "Win");
+                        } else {
+                            databaseManager.updateGameHistory(username, "Lost");
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public GamePanel getGamePanel() {
+        if (parent != null) {
+            return parent.getGamePanel();
+        }
+        return null;
+    }
+
     private void showGameHistory() {
-        // Implement game history functionality
-        JOptionPane.showMessageDialog(this, "Game history functionality will be implemented here.");
+        JFrame historyFrame = new JFrame("Game History");
+        historyFrame.setSize(400, 300);
+        historyFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        JPanel historyPanel = new JPanel(new BorderLayout());
+
+        JTextArea historyTextArea = new JTextArea(10, 30);
+        historyTextArea.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(historyTextArea);
+        historyPanel.add(scrollPane, BorderLayout.CENTER);
+
+        JButton closeButton = new JButton("Close");
+        closeButton.addActionListener(e -> historyFrame.dispose());
+        historyPanel.add(closeButton, BorderLayout.SOUTH);
+
+        try {
+            String query = "SELECT * FROM gamehistory WHERE user_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            int userId = databaseManager.getUserIdByUsername(username);
+            statement.setInt(1, userId);
+            ResultSet resultSet = statement.executeQuery();
+
+            StringBuilder history = new StringBuilder();
+            while (resultSet.next()) {
+                Timestamp timestamp = resultSet.getTimestamp("timestamp");
+                String status = resultSet.getString("status");
+                history.append("Timestamp: ").append(timestamp).append(", Status: ").append(status).append("\n");
+            }
+
+            if (history.length() > 0) {
+                historyTextArea.setText(history.toString());
+            } else {
+                historyTextArea.setText("No game history found.");
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error retrieving game history.", "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+
+        historyFrame.add(historyPanel);
+        historyFrame.setLocationRelativeTo(this);
+        historyFrame.setVisible(true);
     }
 
     public static void main(String[] args) {

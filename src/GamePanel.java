@@ -21,6 +21,9 @@ public class GamePanel extends JPanel implements Runnable {
     Paddle paddle2;
     Ball ball;
     Score score;
+    private int player1Wins = 0; // Counter for player 1 wins
+    private int player2Wins = 0; // Counter for player 2 wins
+
     JButton pauseResumeButton;
     JButton exitButton;
     boolean gamePaused = false;
@@ -28,10 +31,13 @@ public class GamePanel extends JPanel implements Runnable {
     private DatabaseManager databaseManager;
     String username;
     Connection connection;
+    private JFrame parentFrame;
     private JPanel controlPanel;
+    private boolean gameFinished = false;
 
     public GamePanel(DatabaseManager databaseManager, String username, Connection connection, PongMainPage frame) {
         this.username = username;
+        this.parentFrame = frame;
         this.connection = connection;
         this.databaseManager = databaseManager;
 
@@ -208,25 +214,96 @@ public class GamePanel extends JPanel implements Runnable {
             score.player2++;
             newPaddles();
             newBall();
-            checkGameResult();
+            checkGameResult(); // Call checkGameResult() when player 2 scores
         }
         if (ball.x >= GAME_WIDTH - BALL_DIAMETER) {
             score.player1++;
             newPaddles();
             newBall();
-            checkGameResult();
+            checkGameResult(); // Call checkGameResult() when player 1 scores
         }
     }
 
     public void checkGameResult() {
-        if (score.player1 >= 1) {
+        if (score.player1 > score.player2) {
             playerWins = true;
+            player1Wins++; // Increment player 1 wins counter
             databaseManager.updateWins(username);
-        } else if (score.player2 >= 1) {
+        } else if (score.player2 > score.player1) {
             playerWins = false;
+            player2Wins++;
             databaseManager.updateLosses(username);
         }
     }
+
+    public boolean playerWins() {
+        return (player1Wins > player2Wins);
+    }
+
+    public boolean isGameOver() {
+        // Define your game over condition here
+        // For example, if one player reaches a certain number of points
+        if (score.player1 >= 1 || score.player2 >= 1) {
+            System.out.println("player has reached more than 1 point");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // code part where the game stops running and loads the game history into the
+    // game history table after one player wins/looses the game.
+    // public void checkGameCompletion() {
+    // if ((score.player1 >= 2 || score.player2 >= 2) && !gameFinished) {
+    // // Check if either player has reached 2 points and the game hasn't finished
+    // yet
+    // if (score.player1 >= 2) {
+    // // Player 1 wins
+    // playerWins = true;
+    // recordGameHistory("Win");
+    // } else {
+    // // Player 2 (AI) wins
+    // playerWins = false;
+    // recordGameHistory("Lost");
+    // }
+    // gameFinished = true;
+
+    // // Stop the game
+    // stopGame();
+
+    // // Check if the parent frame is not null and is an instance of LoginSignup
+    // if (parentFrame != null && parentFrame instanceof LoginSignupPage) {
+    // // If yes, open the game window in the LoginSignup frame
+    // ((LoginSignupPage) parentFrame).openGameWindow();
+    // // Dispose of the current frame
+    // parentFrame.dispose();
+    // } else {
+    // System.err.println("Error: Parent frame is not an instance of LoginSignup.");
+    // }
+    // }
+    // }
+
+    // private void recordGameHistory(String status) {
+    // try {
+    // // Only insert into game history when 2 points are reached
+    // if (score.player1 >= 2 || score.player2 >= 2) {
+    // // Get the username from the game panel
+    // String username = this.username;
+
+    // // Determine the status for player 1
+    // String player1Status = status;
+    // if (score.player2 >= 2 && status.equals("Lost")) {
+    // // If player 2 (AI) wins, set player 1's status to "Lost"
+    // player1Status = "Lost";
+    // }
+
+    // // Insert game history into the database
+    // databaseManager.updateGameHistory(username, player1Status);
+    // }
+    // } catch (SQLException e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     public void run() {
         long lastTime = System.nanoTime();
