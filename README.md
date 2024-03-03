@@ -12,5 +12,5 @@ Also the AI/algorithm calculates the predicted position of the ball based on its
 
 
 contributors-
-Johnson Brian-https://github.com/Brian-M-J
-Shreyas HS-
+1.Johnson Brian - https://github.com/Brian-M-J
+2.Shreyas H S - https://github.com/Shreyasgowda6
