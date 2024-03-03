@@ -8,3 +8,9 @@ This approach predicts the future position of the ball along the y-axis based on
 Also the AI/algorithm calculates the predicted position of the ball based on its current trajectory. It then adjusts the AI paddle's movement to intercept the ball at its predicted position. This approach makes the AI agent more efficient and capable of reacting to the ball's movement in a smoother and more natural way. Adjusting the speed parameter can fine-tune the responsiveness of the AI paddle to the ball's movements.
 
 2.Connecting to an mySQL database with the JDBC drivers and performing relevant queries.
+
+
+
+contributors-
+Johnson Brian-https://github.com/Brian-M-J
+Shreyas HS-
