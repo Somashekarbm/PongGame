@@ -17,6 +17,7 @@ public class LoginSignupPage extends JFrame {
     private DatabaseManager databaseManager;
     private PongMainPage parent;
     private String jdbcURL = "jdbc:mysql://localhost:3306/ponggamedb";
+    private JFrame gameWindow;
 
     public LoginSignupPage(DatabaseManager databaseManager, PongMainPage parent) {
         this.databaseManager = databaseManager;
@@ -173,11 +174,6 @@ public class LoginSignupPage extends JFrame {
         }
     }
 
-    public void closeWindow() {
-        closeConnection(); // Close the database connection when the window is closed
-        dispose(); // Close the window
-    }
-
     public String getUsername() {
         return username;
     }
@@ -213,7 +209,7 @@ public class LoginSignupPage extends JFrame {
 
     public void openGameWindow() {
         // Create a new JFrame for the game window
-        JFrame gameWindow = new JFrame("Pong Game");
+        gameWindow = new JFrame("Pong Game");
         gameWindow.setSize(400, 200);
         gameWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         gameWindow.addWindowListener(new WindowAdapter() {
@@ -229,28 +225,46 @@ public class LoginSignupPage extends JFrame {
                 checkAndDisplayNewMessages();
             }
         });
-        // Create buttons for play game, game history, and feedback/bug report
+        // Create buttons for play game, game history, feedback/bug report, chat, and
+        // logout
         JButton playGameButton = new JButton("Play Game");
         JButton gameHistoryButton = new JButton("Game History");
         JButton feedbackButton = new JButton("Submit Feedback/Bug Report");
         JButton chatButton = new JButton("Chat"); // Adding the chat button
+        JButton logoutButton = new JButton("Logout"); // Adding the logout button
         // Add action listeners for the buttons
         playGameButton.addActionListener(e -> playGame());
         gameHistoryButton.addActionListener(e -> showGameHistory());
         feedbackButton.addActionListener(e -> submitFeedbackOrBugReport());
         chatButton.addActionListener(e -> openChatWindow()); // Adding action listener for the chat button
+        logoutButton.addActionListener(e -> logout()); // Adding action listener for the logout button
         // Create a panel to hold the buttons
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(4, 1)); // Updated to accommodate the chat button
+        buttonPanel.setLayout(new GridLayout(5, 1)); // Updated to accommodate the logout button
         buttonPanel.add(playGameButton);
         buttonPanel.add(gameHistoryButton);
         buttonPanel.add(feedbackButton);
         buttonPanel.add(chatButton); // Adding the chat button to the panel
+        buttonPanel.add(logoutButton); // Adding the logout button to the panel
 
         // Add the button panel to the game window
         gameWindow.add(buttonPanel);
 
         gameWindow.setVisible(true);
+    }
+
+    private void logout() {
+        // Dispose the current game window
+        closeWindow();
+        // Direct the user back to the PongMainPage
+        parent.setVisible(true);
+    }
+
+    public void closeWindow() {
+        closeConnection();
+        if (gameWindow != null) {
+            gameWindow.dispose(); // Dispose the game window
+        }
     }
 
     private void checkAndDisplayNewMessages() {
