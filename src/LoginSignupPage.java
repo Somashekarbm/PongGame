@@ -1,8 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
+import java.util.ArrayList;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.List;
 
 public class LoginSignupPage extends JFrame {
     private JTextField usernameField;
@@ -220,29 +222,85 @@ public class LoginSignupPage extends JFrame {
                 // Call updateGameHistoryOnClose when the window is closed
                 updateGameHistoryOnClose();
             }
-        });
 
+            @Override
+            public void windowActivated(WindowEvent e) {
+                // Check for new messages when the window is activated (e.g., after login)
+                checkAndDisplayNewMessages();
+            }
+        });
         // Create buttons for play game, game history, and feedback/bug report
         JButton playGameButton = new JButton("Play Game");
         JButton gameHistoryButton = new JButton("Game History");
         JButton feedbackButton = new JButton("Submit Feedback/Bug Report");
-
+        JButton chatButton = new JButton("Chat"); // Adding the chat button
         // Add action listeners for the buttons
         playGameButton.addActionListener(e -> playGame());
         gameHistoryButton.addActionListener(e -> showGameHistory());
         feedbackButton.addActionListener(e -> submitFeedbackOrBugReport());
-
+        chatButton.addActionListener(e -> openChatWindow()); // Adding action listener for the chat button
         // Create a panel to hold the buttons
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(3, 1));
+        buttonPanel.setLayout(new GridLayout(4, 1)); // Updated to accommodate the chat button
         buttonPanel.add(playGameButton);
         buttonPanel.add(gameHistoryButton);
         buttonPanel.add(feedbackButton);
+        buttonPanel.add(chatButton); // Adding the chat button to the panel
 
         // Add the button panel to the game window
         gameWindow.add(buttonPanel);
 
         gameWindow.setVisible(true);
+    }
+
+    private void checkAndDisplayNewMessages() {
+        try {
+            int userId = databaseManager.getUserIdByUsername(username);
+            List<String> newMessages = databaseManager.getNewMessages(userId);
+            for (String message : newMessages) {
+                JOptionPane.showMessageDialog(null, message, "New Message", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<String> getNewMessages(int userId) {
+        List<String> messages = new ArrayList<>();
+        try {
+            String query = "SELECT * FROM chatmessages WHERE receiver_id = ? AND is_read = 0"; // Assuming there's a
+                                                                                               // column 'is_read' to
+                                                                                               // track read/unread
+                                                                                               // messages
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            // Assuming you have a DatabaseManager object in your LoginSignupPageJ class
+
+            while (resultSet.next()) {
+                // Then, you can call the getUsernameById method like this:
+                String sender = databaseManager.getUsernameById(resultSet.getInt("sender_id"));
+                String message = resultSet.getString("message");
+                messages.add(sender + ": " + message);
+                // Mark the message as read
+                markMessageAsRead(resultSet.getInt("message_id")); // Assuming 'message_id' is the primary key of the
+                                                                   // chatmessages table
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return messages;
+    }
+
+    private void markMessageAsRead(int messageId) {
+        try {
+            String query = "UPDATE chatmessages SET is_read = 1 WHERE message_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, messageId);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void submitFeedbackOrBugReport() {
@@ -269,6 +327,28 @@ public class LoginSignupPage extends JFrame {
                 JOptionPane.showMessageDialog(this, "Failed to submit Feedback/Bug Report.",
                         "Error", JOptionPane.ERROR_MESSAGE);
                 ex.printStackTrace();
+            }
+        }
+    }
+
+    private void openChatWindow() {
+        String receiverUsername = JOptionPane.showInputDialog(this, "Enter the username of the recipient:");
+        if (receiverUsername != null && !receiverUsername.isEmpty()) {
+            String message = JOptionPane.showInputDialog(this, "Enter your message:");
+            if (message != null && !message.isEmpty()) {
+                try {
+                    int senderId = databaseManager.getUserIdByUsername(username);
+                    int receiverId = databaseManager.getUserIdByUsername(receiverUsername);
+                    if (senderId != -1 && receiverId != -1) {
+                        databaseManager.sendChatMessage(senderId, receiverId, message);
+                        JOptionPane.showMessageDialog(this, "Message sent successfully.");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Invalid sender or receiver.");
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Error sending message.");
+                    ex.printStackTrace();
+                }
             }
         }
     }

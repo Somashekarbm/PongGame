@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseManager {
     private Connection connection;
@@ -94,6 +96,85 @@ public class DatabaseManager {
             e.printStackTrace();
         }
     }
+
+    public void sendChatMessage(int senderId, int receiverId, String message) {
+        try {
+            String query = "INSERT INTO chatmessages (sender_id, receiver_id, message) VALUES (?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, senderId);
+            preparedStatement.setInt(2, receiverId);
+            preparedStatement.setString(3, message);
+            preparedStatement.executeUpdate();
+            System.out.println("Chat message sent successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getUsernameById(int userId) {
+        String username = "";
+        try {
+            String query = "SELECT username FROM users WHERE user_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                username = resultSet.getString("username");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return username;
+    }
+
+    public List<String> getNewMessages(int userId) throws SQLException {
+        List<String> newMessages = new ArrayList<>();
+        String query = "SELECT * FROM chatmessages WHERE receiver_id = ? AND is_new = 1";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String sender = getUsernameById(resultSet.getInt("sender_id"));
+                    String message = resultSet.getString("message");
+                    newMessages.add(sender + ": " + message);
+                    // Mark the message as read
+                    markMessageAsRead(resultSet.getInt("message_id"));
+                }
+            }
+        }
+        return newMessages;
+    }
+
+    private void markMessageAsRead(int messageId) throws SQLException {
+        String query = "UPDATE chatmessages SET is_new = 0 WHERE message_id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, messageId);
+            statement.executeUpdate();
+        }
+    }
+
+    // to retrive the complete chat history
+    // public List<String> getChatMessages(int userId1, int userId2) {
+    // List<String> messages = new ArrayList<>();
+    // try {
+    // String query = "SELECT * FROM chatmessages WHERE (sender_id = ? AND
+    // receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)";
+    // PreparedStatement preparedStatement = connection.prepareStatement(query);
+    // preparedStatement.setInt(1, userId1);
+    // preparedStatement.setInt(2, userId2);
+    // preparedStatement.setInt(3, userId2);
+    // preparedStatement.setInt(4, userId1);
+    // ResultSet resultSet = preparedStatement.executeQuery();
+    // while (resultSet.next()) {
+    // String sender = getUsernameById(resultSet.getInt("sender_id"));
+    // String message = resultSet.getString("message");
+    // messages.add(sender + ": " + message);
+    // }
+    // } catch (SQLException e) {
+    // e.printStackTrace();
+    // }
+    // return messages;
+    // }
 
     public void createRankingsView() {
         try {
