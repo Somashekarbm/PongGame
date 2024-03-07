@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -224,20 +222,55 @@ public class LoginSignupPage extends JFrame {
             }
         });
 
-        // Add buttons for play game and game history
+        // Create buttons for play game, game history, and feedback/bug report
         JButton playGameButton = new JButton("Play Game");
         JButton gameHistoryButton = new JButton("Game History");
+        JButton feedbackButton = new JButton("Submit Feedback/Bug Report");
 
         // Add action listeners for the buttons
         playGameButton.addActionListener(e -> playGame());
         gameHistoryButton.addActionListener(e -> showGameHistory());
+        feedbackButton.addActionListener(e -> submitFeedbackOrBugReport());
 
-        // Add buttons to the game window
-        gameWindow.setLayout(new GridLayout(2, 1));
-        gameWindow.add(playGameButton);
-        gameWindow.add(gameHistoryButton);
+        // Create a panel to hold the buttons
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(3, 1));
+        buttonPanel.add(playGameButton);
+        buttonPanel.add(gameHistoryButton);
+        buttonPanel.add(feedbackButton);
+
+        // Add the button panel to the game window
+        gameWindow.add(buttonPanel);
 
         gameWindow.setVisible(true);
+    }
+
+    private void submitFeedbackOrBugReport() {
+        // Prompt user for feedback or bug report details
+        String type = (String) JOptionPane.showInputDialog(this, "Please select the type of your report:",
+                "Report Type", JOptionPane.QUESTION_MESSAGE, null,
+                new String[] { "Feedback", "Bug Report" }, "Feedback");
+        if (type == null) {
+            // User canceled the input dialog
+            return;
+        }
+
+        String subject = JOptionPane.showInputDialog(this, "Please provide the subject of your " + type + ":");
+        String description = JOptionPane.showInputDialog(this, "Please provide the description of your " + type + ":");
+
+        if (subject != null && !subject.isEmpty() && description != null && !description.isEmpty()) {
+            // Insert feedback or bug report into the database
+            try {
+                int userId = databaseManager.getUserIdByUsername(username);
+                databaseManager.insertFeedbackOrBugReport(userId, type, subject, description);
+                JOptionPane.showMessageDialog(this, "Feedback/Bug Report submitted successfully.",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Failed to submit Feedback/Bug Report.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        }
     }
 
     private void playGame() {

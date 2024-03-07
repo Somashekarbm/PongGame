@@ -80,6 +80,21 @@ public class DatabaseManager {
         }
     }
 
+    public void insertFeedbackOrBugReport(int userId, String reportType, String subject, String description) {
+        try {
+            String query = "INSERT INTO feedbackbugreports (user_id, report_type, subject, description) VALUES (?, ?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, reportType);
+            preparedStatement.setString(3, subject);
+            preparedStatement.setString(4, description);
+            preparedStatement.executeUpdate();
+            System.out.println("Feedback or Bug Report inserted successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void createRankingsView() {
         try {
             // Check if the rankings view already exists
