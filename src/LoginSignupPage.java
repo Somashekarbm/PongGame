@@ -373,15 +373,6 @@ public class LoginSignupPage extends JFrame {
             // Create a new GameFrame instead of directly creating a GamePanel
             new GameFrame(parent, username, connection);
 
-            // Call insertGameHistory to record the start of the game
-            try {
-                databaseManager.insertGameHistory(username);
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error recording game start.", "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-
             // Close the current login/signup window
             dispose();
         } else {
