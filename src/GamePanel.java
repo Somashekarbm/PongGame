@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements Runnable {
@@ -21,8 +22,9 @@ public class GamePanel extends JPanel implements Runnable {
     Paddle paddle2;
     Ball ball;
     Score score;
-    private int player1Wins = 0; // Counter for player 1 wins
-    private int player2Wins = 0; // Counter for player 2 wins
+    private int noOfPlayerWins = 0; // Counter for player 1 wins
+    private int noOfAiWins = 0; // Counter for player 2 wins
+    private Timestamp roundTime;
 
     JButton pauseResumeButton;
     JButton exitButton;
@@ -40,6 +42,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.parentFrame = frame;
         this.connection = connection;
         this.databaseManager = databaseManager;
+        roundTime = new Timestamp(System.currentTimeMillis());
 
         // Initialize AI and paddles
         ai = new AI(GAME_WIDTH - PADDLE_WIDTH, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 2);
@@ -211,13 +214,13 @@ public class GamePanel extends JPanel implements Runnable {
             ai.y = GAME_HEIGHT - PADDLE_HEIGHT;
 
         if (ball.x <= 0) {
-            score.player2++;
+            score.ai++;
             newPaddles();
             newBall();
             checkGameResult(); // Call checkGameResult() when player 2 scores
         }
         if (ball.x >= GAME_WIDTH - BALL_DIAMETER) {
-            score.player1++;
+            score.player++;
             newPaddles();
             newBall();
             checkGameResult(); // Call checkGameResult() when player 1 scores
@@ -225,85 +228,35 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void checkGameResult() {
-        if (score.player1 > score.player2) {
+        if (score.player > score.ai) {
             playerWins = true;
-            player1Wins++; // Increment player 1 wins counter
+            noOfPlayerWins++; // Increment player 1 wins counter
             databaseManager.updateWins(username);
-        } else if (score.player2 > score.player1) {
+            databaseManager.insertGameHistory(username, roundTime, "win");
+            roundTime = new Timestamp(System.currentTimeMillis());
+        } else if (score.ai > score.player) {
             playerWins = false;
-            player2Wins++;
+            noOfAiWins++;
             databaseManager.updateLosses(username);
+            databaseManager.insertGameHistory(username, roundTime, "loss");
+            roundTime = new Timestamp(System.currentTimeMillis());
         }
     }
 
     public boolean playerWins() {
-        return (player1Wins > player2Wins);
+        return (noOfPlayerWins > noOfAiWins);
     }
 
     public boolean isGameOver() {
         // Define your game over condition here
         // For example, if one player reaches a certain number of points
-        if (score.player1 >= 1 || score.player2 >= 1) {
+        if (score.player >= 1 || score.ai >= 1) {
             System.out.println("player has reached more than 1 point");
             return true;
         } else {
             return false;
         }
     }
-
-    // code part where the game stops running and loads the game history into the
-    // game history table after one player wins/looses the game.
-    // public void checkGameCompletion() {
-    // if ((score.player1 >= 2 || score.player2 >= 2) && !gameFinished) {
-    // // Check if either player has reached 2 points and the game hasn't finished
-    // yet
-    // if (score.player1 >= 2) {
-    // // Player 1 wins
-    // playerWins = true;
-    // recordGameHistory("Win");
-    // } else {
-    // // Player 2 (AI) wins
-    // playerWins = false;
-    // recordGameHistory("Lost");
-    // }
-    // gameFinished = true;
-
-    // // Stop the game
-    // stopGame();
-
-    // // Check if the parent frame is not null and is an instance of LoginSignup
-    // if (parentFrame != null && parentFrame instanceof LoginSignupPage) {
-    // // If yes, open the game window in the LoginSignup frame
-    // ((LoginSignupPage) parentFrame).openGameWindow();
-    // // Dispose of the current frame
-    // parentFrame.dispose();
-    // } else {
-    // System.err.println("Error: Parent frame is not an instance of LoginSignup.");
-    // }
-    // }
-    // }
-
-    // private void recordGameHistory(String status) {
-    // try {
-    // // Only insert into game history when 2 points are reached
-    // if (score.player1 >= 2 || score.player2 >= 2) {
-    // // Get the username from the game panel
-    // String username = this.username;
-
-    // // Determine the status for player 1
-    // String player1Status = status;
-    // if (score.player2 >= 2 && status.equals("Lost")) {
-    // // If player 2 (AI) wins, set player 1's status to "Lost"
-    // player1Status = "Lost";
-    // }
-
-    // // Insert game history into the database
-    // databaseManager.updateGameHistory(username, player1Status);
-    // }
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // }
-    // }
 
     public void run() {
         long lastTime = System.nanoTime();

@@ -47,15 +47,32 @@ public class DatabaseManager {
         }
     }
 
-    // for now i have set the status to null,later lets implement the status to
-    // store whether the user has won/lost during that particular game.
-    public void insertGameHistory(String username) throws SQLException {
-        String query = "INSERT INTO gamehistory (user_id, timestamp, status) VALUES (?, CURRENT_TIMESTAMP, ?)";
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            int userId = getUserIdByUsername(username);
-            statement.setInt(1, userId);
-            statement.setString(2, "Pending"); // Set initial status to "Pending"
-            statement.executeUpdate();
+    public void insertGameHistory(String username, Timestamp startTime, String status) {
+        try {
+            // 1. Get user ID based on username
+            String query = "SELECT user_id FROM users WHERE username = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, username);
+            ResultSet resultSet = preparedStatement.executeQuery();
+    
+            int userId;
+            if (resultSet.next()) {
+                userId = resultSet.getInt("user_id");
+            } else {
+                // Handle case where username not found (e.g., log error or throw exception)
+                System.err.println("Username " + username + " not found in database.");
+                return;
+            }
+    
+            // 2. Insert game history with retrieved user ID
+            String insertQuery = "INSERT INTO gamehistory (user_id, status, timestamp) VALUES (?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insertQuery);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, status);
+            preparedStatement.setTimestamp(3, startTime);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -152,29 +169,6 @@ public class DatabaseManager {
             statement.executeUpdate();
         }
     }
-
-    // to retrive the complete chat history
-    // public List<String> getChatMessages(int userId1, int userId2) {
-    // List<String> messages = new ArrayList<>();
-    // try {
-    // String query = "SELECT * FROM chatmessages WHERE (sender_id = ? AND
-    // receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)";
-    // PreparedStatement preparedStatement = connection.prepareStatement(query);
-    // preparedStatement.setInt(1, userId1);
-    // preparedStatement.setInt(2, userId2);
-    // preparedStatement.setInt(3, userId2);
-    // preparedStatement.setInt(4, userId1);
-    // ResultSet resultSet = preparedStatement.executeQuery();
-    // while (resultSet.next()) {
-    // String sender = getUsernameById(resultSet.getInt("sender_id"));
-    // String message = resultSet.getString("message");
-    // messages.add(sender + ": " + message);
-    // }
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // }
-    // return messages;
-    // }
 
     public void createRankingsView() {
         try {
