@@ -13,6 +13,19 @@ public class DatabaseManager {
         }
     }
 
+    public void insertAdmin(String username, String password) {
+        String sql = "INSERT INTO admin (username, password) VALUES (?, ?)";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.executeUpdate();
+            System.out.println("Admin inserted successfully.");
+        } catch (SQLException e) {
+            System.out.println("Error inserting admin: " + e.getMessage());
+        }
+    }
+
     public void insertPlayer(String playerName) {
         try {
             String query = "INSERT INTO users (username, password) VALUES (?, ?)";
@@ -49,13 +62,32 @@ public class DatabaseManager {
 
     // for now i have set the status to null,later lets implement the status to
     // store whether the user has won/lost during that particular game.
-    public void insertGameHistory(String username) throws SQLException {
-        String query = "INSERT INTO gamehistory (user_id, timestamp, status) VALUES (?, CURRENT_TIMESTAMP, ?)";
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            int userId = getUserIdByUsername(username);
-            statement.setInt(1, userId);
-            statement.setString(2, "Pending"); // Set initial status to "Pending"
-            statement.executeUpdate();
+    public void insertGameHistory(String username, Timestamp startTime, String status) {
+        try {
+            // 1. Get user ID based on username
+            String query = "SELECT user_id FROM users WHERE username = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, username);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            int userId;
+            if (resultSet.next()) {
+                userId = resultSet.getInt("user_id");
+            } else {
+                // Handle case where username not found (e.g., log error or throw exception)
+                System.err.println("Username " + username + " not found in database.");
+                return;
+            }
+
+            // 2. Insert game history with retrieved user ID
+            String insertQuery = "INSERT INTO gamehistory (user_id, status, timestamp) VALUES (?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insertQuery);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setString(2, status);
+            preparedStatement.setTimestamp(3, startTime);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 

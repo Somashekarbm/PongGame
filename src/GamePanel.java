@@ -4,6 +4,7 @@ import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Random;
+import java.sql.Timestamp;
 
 public class GamePanel extends JPanel implements Runnable {
     AI ai;
@@ -21,8 +22,11 @@ public class GamePanel extends JPanel implements Runnable {
     Paddle paddle2;
     Ball ball;
     Score score;
-    private int player1Wins = 0; // Counter for player 1 wins
-    private int player2Wins = 0; // Counter for player 2 wins
+    // private int player1Wins = 0; // Counter for player 1 wins
+    // private int player2Wins = 0; // Counter for player 2 wins
+    private int noOfPlayerWins = 0; // Counter for player 1 wins
+    private int noOfAiWins = 0; // Counter for player 2 wins
+    private Timestamp roundTime;
 
     JButton pauseResumeButton;
     JButton exitButton;
@@ -40,7 +44,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.parentFrame = frame;
         this.connection = connection;
         this.databaseManager = databaseManager;
-
+        roundTime = new Timestamp(System.currentTimeMillis());
         // Initialize AI and paddles
         ai = new AI(GAME_WIDTH - PADDLE_WIDTH, (GAME_HEIGHT / 2) - (PADDLE_HEIGHT / 2), PADDLE_WIDTH, PADDLE_HEIGHT, 2);
         newPaddles();
@@ -176,6 +180,37 @@ public class GamePanel extends JPanel implements Runnable {
         paddle1.move();
         ai.makeMove(ball);
         ball.move();
+
+        // Check if a player's score reaches 2
+        // if (score.player == 2 || score.ai == 2) {
+        // // Call checkGameResult() only once when the score reaches 2
+        // if (!gameFinished) {
+        // checkGameResult();
+        // gameFinished = true;
+        // }
+        // }
+    }
+
+    public void checkGameResult() {
+        if (score.player >= 2 || score.ai >= 2) {
+            String status;
+            if (score.player > score.ai) {
+                status = "Win";
+            } else {
+                status = "Loss";
+            }
+
+            // Update game history only when one player's score reaches 2
+            if (!gameFinished) {
+                databaseManager.insertGameHistory(username, roundTime, status);
+                roundTime = new Timestamp(System.currentTimeMillis());
+                noOfPlayerWins = 0;
+                noOfAiWins = 0;
+
+                // Reset gameFinished flag
+                gameFinished = true;
+            }
+        }
     }
 
     public void checkCollision() {
@@ -211,40 +246,28 @@ public class GamePanel extends JPanel implements Runnable {
             ai.y = GAME_HEIGHT - PADDLE_HEIGHT;
 
         if (ball.x <= 0) {
-            score.player2++;
+            score.ai++;
             newPaddles();
             newBall();
             checkGameResult(); // Call checkGameResult() when player 2 scores
         }
         if (ball.x >= GAME_WIDTH - BALL_DIAMETER) {
-            score.player1++;
+            score.player++;
             newPaddles();
             newBall();
             checkGameResult(); // Call checkGameResult() when player 1 scores
         }
     }
 
-    public void checkGameResult() {
-        if (score.player1 > score.player2) {
-            playerWins = true;
-            player1Wins++; // Increment player 1 wins counter
-            databaseManager.updateWins(username);
-        } else if (score.player2 > score.player1) {
-            playerWins = false;
-            player2Wins++;
-            databaseManager.updateLosses(username);
-        }
-    }
-
     public boolean playerWins() {
-        return (player1Wins > player2Wins);
+        return (noOfPlayerWins > noOfAiWins);
     }
 
     public boolean isGameOver() {
         // Define your game over condition here
         // For example, if one player reaches a certain number of points
-        if (score.player1 >= 1 || score.player2 >= 1) {
-            System.out.println("player has reached more than 1 point");
+        if (score.player >= 2 || score.ai >= 2) {
+            System.out.println("player has reached more than 2 point");
             return true;
         } else {
             return false;

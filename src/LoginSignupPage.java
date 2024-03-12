@@ -214,12 +214,6 @@ public class LoginSignupPage extends JFrame {
         gameWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         gameWindow.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosed(WindowEvent e) {
-                // Call updateGameHistoryOnClose when the window is closed
-                updateGameHistoryOnClose();
-            }
-
-            @Override
             public void windowActivated(WindowEvent e) {
                 // Check for new messages when the window is activated (e.g., after login)
                 checkAndDisplayNewMessages();
@@ -373,46 +367,11 @@ public class LoginSignupPage extends JFrame {
             // Create a new GameFrame instead of directly creating a GamePanel
             new GameFrame(parent, username, connection);
 
-            // Call insertGameHistory to record the start of the game
-            try {
-                databaseManager.insertGameHistory(username);
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error recording game start.", "Error",
-                        JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
-            }
-
             // Close the current login/signup window
             dispose();
         } else {
             JOptionPane.showMessageDialog(this, "Please login first.", "Login Required", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    public void updateGameHistoryOnClose() {
-        if (isAuthenticated()) {
-            try {
-                GamePanel gamePanel = parent.getGamePanel();
-                if (gamePanel != null) {
-                    if (gamePanel.isGameOver()) {
-                        if (gamePanel.playerWins()) {
-                            databaseManager.updateGameHistory(username, "Win");
-                        } else {
-                            databaseManager.updateGameHistory(username, "Lost");
-                        }
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public GamePanel getGamePanel() {
-        if (parent != null) {
-            return parent.getGamePanel();
-        }
-        return null;
     }
 
     private void showGameHistory() {

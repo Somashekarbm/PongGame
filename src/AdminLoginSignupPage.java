@@ -2,32 +2,47 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class AdminLoginSignupPage extends JFrame {
     private DatabaseManager rankingsManager;
-    private GamePanel gamePanel;
 
     public AdminLoginSignupPage(DatabaseManager rankingsManager) {
         this.rankingsManager = rankingsManager;
 
         setTitle("Admin Login/Signup");
-        setSize(400, 200);
+        setSize(400, 150);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 2));
+        panel.setLayout(new GridLayout(4, 1));
 
+        JPanel userInputPanel = new JPanel(new GridLayout(2, 1));
         JLabel usernameLabel = new JLabel("Username:");
         JTextField usernameField = new JTextField();
-        panel.add(usernameLabel);
-        panel.add(usernameField);
-
+        usernameField.setPreferredSize(new Dimension(200, 30)); // Set preferred size for username field
         JLabel passwordLabel = new JLabel("Password:");
         JPasswordField passwordField = new JPasswordField();
-        panel.add(passwordLabel);
-        panel.add(passwordField);
+        passwordField.setPreferredSize(new Dimension(200, 30)); // Set preferred size for password field
+        userInputPanel.add(usernameLabel);
+        userInputPanel.add(usernameField);
+        userInputPanel.add(passwordLabel);
+        userInputPanel.add(passwordField);
+        panel.add(userInputPanel);
 
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JButton loginButton = new JButton("Login");
+        JButton signupButton = new JButton("Signup");
+        JButton backButton = new JButton("Back");
+        buttonPanel.add(loginButton);
+        buttonPanel.add(signupButton);
+        buttonPanel.add(backButton);
+        panel.add(buttonPanel);
+
+        add(panel);
+
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -41,9 +56,7 @@ public class AdminLoginSignupPage extends JFrame {
                 }
             }
         });
-        panel.add(loginButton);
 
-        JButton signupButton = new JButton("Signup");
         signupButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -56,20 +69,66 @@ public class AdminLoginSignupPage extends JFrame {
                 }
             }
         });
-        panel.add(signupButton);
 
-        add(panel);
+        backButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+                new PongMainPage(rankingsManager); // Open the PongMainPage
+            }
+        });
+
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
     private boolean validateLogin(String username, String password) {
-        return username.equals("root") && password.equals("Bandisomu2@");
+        try {
+            // Query the admin table for the provided username and password
+            String query = "SELECT * FROM admin WHERE username = ? AND password = ?";
+            PreparedStatement preparedStatement = rankingsManager.getConnection().prepareStatement(query);
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, password);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            // If a matching admin is found, return true
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false; // Return false in case of any error
+        }
     }
 
     private void signupAdmin(String username, String password) {
-        // You can implement admin signup functionality if needed
-        JOptionPane.showMessageDialog(AdminLoginSignupPage.this, "Admin signup feature not implemented.");
+
+        rankingsManager.insertAdmin(username, password);
+
+        // After signup, show a message to the admin
+        JOptionPane.showMessageDialog(AdminLoginSignupPage.this, "Admin signup successful.");
+
+        // Add a back button to return to the previous page
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Dispose of the current window
+                dispose();
+
+                // Open the previous page (if needed)
+                // For example, you might want to open the login page again
+                new AdminLoginSignupPage(rankingsManager);
+            }
+        });
+
+        // Create a panel for the back button
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(backButton);
+
+        // Add the button panel to the frame
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        // Optionally, you can close the signup window after successful signup
+        // dispose();
     }
 
     private void openAdminFeaturesWindow() {
@@ -134,24 +193,18 @@ public class AdminLoginSignupPage extends JFrame {
         });
         panel.add(editPlayerButton);
 
-        JButton exitButton = new JButton("Exit");
-        exitButton.addActionListener(new ActionListener() {
+        JButton backButton1 = new JButton("Back");
+        backButton1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Stop the game loop
-                if (gamePanel != null) {
-                    gamePanel.stopGame();
-                }
-
                 // Dispose of the current window
-                dispose();
+                adminFeaturesWindow.dispose();
 
-                // Open the PongMainPage
-                new PongMainPage(rankingsManager).setVisible(true);
+                // Open the login/signup page
+                new AdminLoginSignupPage(rankingsManager);
             }
         });
-
-        panel.add(exitButton);
+        panel.add(backButton1);
 
         adminFeaturesWindow.add(panel);
         adminFeaturesWindow.setLocationRelativeTo(null);
