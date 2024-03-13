@@ -13,33 +13,45 @@ public class AdminLoginSignupPage extends JFrame {
         this.rankingsManager = rankingsManager;
 
         setTitle("Admin Login/Signup");
-        setSize(400, 150);
+        setSize(400, 200); // Increased height for better spacing
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(4, 1));
+        panel.setLayout(new BorderLayout());
 
-        JPanel userInputPanel = new JPanel(new GridLayout(2, 1));
+        JPanel userInputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(5, 10, 5, 10); // Padding
+
         JLabel usernameLabel = new JLabel("Username:");
-        JTextField usernameField = new JTextField();
-        usernameField.setPreferredSize(new Dimension(200, 30)); // Set preferred size for username field
-        JLabel passwordLabel = new JLabel("Password:");
-        JPasswordField passwordField = new JPasswordField();
-        passwordField.setPreferredSize(new Dimension(200, 30)); // Set preferred size for password field
-        userInputPanel.add(usernameLabel);
-        userInputPanel.add(usernameField);
-        userInputPanel.add(passwordLabel);
-        userInputPanel.add(passwordField);
-        panel.add(userInputPanel);
+        userInputPanel.add(usernameLabel, gbc);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        gbc.gridx++;
+        JTextField usernameField = new JTextField(20); // Set columns for width
+        userInputPanel.add(usernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        JLabel passwordLabel = new JLabel("Password:");
+        userInputPanel.add(passwordLabel, gbc);
+
+        gbc.gridx++;
+        JPasswordField passwordField = new JPasswordField(20); // Set columns for width
+        userInputPanel.add(passwordField, gbc);
+
+        panel.add(userInputPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 5, 5)); // Vertical stacking with spacing
         JButton loginButton = new JButton("Login");
         JButton signupButton = new JButton("Signup");
         JButton backButton = new JButton("Back");
         buttonPanel.add(loginButton);
         buttonPanel.add(signupButton);
         buttonPanel.add(backButton);
-        panel.add(buttonPanel);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(panel);
 
