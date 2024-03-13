@@ -20,6 +20,11 @@ public class PongMainPage extends JFrame {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(4, 1));
 
+        // Customize button colors
+        UIDefaults defaults = UIManager.getDefaults();
+        defaults.put("Button.background", new Color(0, 128, 192)); // Custom background color
+        defaults.put("Button.foreground", Color.WHITE); // Custom foreground color
+
         JButton adminButton = new JButton("Admin Login/Signup");
         adminButton.addActionListener(new ActionListener() {
             @Override
@@ -130,6 +135,12 @@ public class PongMainPage extends JFrame {
     }
 
     public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         DatabaseManager manager = new DatabaseManager("jdbc:mysql://localhost:3306/ponggamedb", "root", "Bandisomu2@");
         PongMainPage mainPage = new PongMainPage(manager);
         SwingUtilities.invokeLater(() -> mainPage.setVisible(true));
