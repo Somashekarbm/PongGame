@@ -94,13 +94,17 @@ public class PongMainPage extends JFrame {
     }
 
     private void openPlayerLoginSignupPage() {
-        LoginSignupPage loginSignupPage = new LoginSignupPage(rankingsManager, this);
+        LoginSignupPage loginSignupPage = new LoginSignupPage(rankingsManager, mainpage); // Pass mainpage instead of
+                                                                                          // this
         loginSignupPage.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosed(java.awt.event.WindowEvent windowEvent) {
                 if (loginSignupPage.isAuthenticated() && loginSignupPage.getUsername() != null) {
-                    // Pass the PongMainPage instance to the GamePanel constructor
+                    // Pass the mainpage instance to the GamePanel constructor
                     startGame(loginSignupPage.getUsername(), loginSignupPage.getConnection(), mainpage);
+                } else {
+                    // If not authenticated, show the main page again
+                    mainpage.setVisible(true);
                 }
             }
         });
@@ -136,7 +140,7 @@ public class PongMainPage extends JFrame {
 
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         } catch (Exception e) {
             e.printStackTrace();
         }

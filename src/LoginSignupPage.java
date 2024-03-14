@@ -248,9 +248,13 @@ public class LoginSignupPage extends JFrame {
     }
 
     private void logout() {
-        // Dispose the current game window
+        // Reset authentication status
+        isAuthenticated = false;
+
+        // Close the current game window
         closeWindow();
-        // Direct the user back to the PongMainPage
+
+        // Make the parent window (PongMainPage) visible
         parent.setVisible(true);
     }
 
